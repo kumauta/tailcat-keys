@@ -10,7 +10,7 @@ Tailcat v0.4.0では、クライアント用の既定鍵を次のコマンドで
 tailcat genkey --client --key=client-default
 ```
 
-表示された `nodekey:...` を `kumauta.keys` に追加します。以後のクライアント
+表示された `nodekey:...` を、後述の `./edit-keys.sh` で追加します。以後のクライアント
 接続では、`client-default` が自動的に使用されます。
 
 保存済みの公開鍵を再確認する場合:
@@ -35,35 +35,36 @@ macOSでは秘密鍵が通常、次の場所に保存されます。このファ
 `--force` を付けて再生成すると公開鍵が変わり、サーバーに登録した古い公開鍵では
 接続できなくなります。通常、鍵生成は初回の一度だけ行います。
 
-## `main` ブランチから取得して変換
+## 鍵一覧を編集
 
-変換スクリプトと鍵一覧をRaw URLから取得し、Tailcatの `--allow` で使える
-カンマ区切り形式へ変換します。
+`kumauta.keys.list` はコメント付きの編集元、`kumauta.keys` はTailcatに
+直接渡すカンマ区切り1行の配布用ファイルです。直接編集せず、
+次のコマンドを使います。
 
 ```sh
-curl -fsSL \
-  https://raw.githubusercontent.com/kumauta/tailcat-keys/main/to-tailcat-allow.sh |
-sh -s -- \
-  https://raw.githubusercontent.com/kumauta/tailcat-keys/main/kumauta.keys
+./edit-keys.sh
 ```
 
-Tailcatサーバーの起動時に直接使用する場合:
+スクリプトは `vi` または `$VISUAL` / `$EDITOR` で編集元を開き、
+鍵の形式と重複を検証してから `kumauta.keys` を生成します。
+
+`kumauta.keys.list` では、鍵の後ろに `#` でコメントを記載できます。
+
+```text
+nodekey:0123456789abcdef... # device-name
+```
+
+## `main` ブランチから取得
+
+Tailcatサーバーの起動時に、生成済みの1行ファイルを直接取得します。
 
 ```sh
 allow_keys="$(
   curl -fsSL \
-    https://raw.githubusercontent.com/kumauta/tailcat-keys/main/to-tailcat-allow.sh |
-  sh -s -- \
     https://raw.githubusercontent.com/kumauta/tailcat-keys/main/kumauta.keys
 )"
 
 exec /usr/local/bin/tailcat \
   --allow="$allow_keys" \
   --serve=no-auth-ssh
-```
-
-`kumauta.keys` では、鍵の後ろに `#` でコメントを記載できます。
-
-```text
-nodekey:0123456789abcdef... # device-name
 ```
